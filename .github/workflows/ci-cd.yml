@@ -39,7 +39,7 @@ jobs:
         run: |
           container_id=$(docker run -d -p 127.0.0.1:3000:3000 budgetlite:ci)
           trap 'docker rm -f "$container_id" >/dev/null' EXIT
-          if ! curl --fail --silent --show-error --retry 10 --retry-connrefused \
+          if ! curl --fail --silent --show-error --retry 10 --retry-all-errors \
             --retry-delay 1 --max-time 3 http://127.0.0.1:3000/readyz; then
             docker logs "$container_id"
             exit 1

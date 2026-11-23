@@ -44,3 +44,23 @@ jobs:
             docker logs "$container_id"
             exit 1
           fi
+
+      - name: Generar SBOM de producción
+        if: github.event_name == 'push'
+        run: npm sbom --package-lock-only --sbom-format=cyclonedx --omit=dev > budgetlite-sbom.cdx.json
+
+      - name: Exportar imagen Docker
+        if: github.event_name == 'push'
+        shell: bash
+        run: docker save budgetlite:ci | gzip > budgetlite-linux-arm64.tar.gz
+
+      - name: Guardar entregables
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v6
+        with:
+          name: budgetlite-linux-arm64
+          path: |
+            budgetlite-sbom.cdx.json
+            budgetlite-linux-arm64.tar.gz
+          if-no-files-found: error
+          compression-level: 0

@@ -1,4 +1,4 @@
-name: BudgetLite CI
+name: BudgetLite CI/CD
 
 on:
   push:
@@ -80,3 +80,50 @@ jobs:
             budgetlite-linux-arm64.tar.gz
           if-no-files-found: error
           compression-level: 0
+
+  deploy:
+    name: Desplegar en Lima con Terraform
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.repository.private
+    runs-on: [self-hosted, linux, arm64, budgetlite-lima]
+    timeout-minutes: 15
+    concurrency:
+      group: budgetlite-lima-deploy
+      cancel-in-progress: false
+    env:
+      TF_IN_AUTOMATION: 'true'
+      TF_INPUT: 'false'
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: budgetlite-linux-arm64
+          path: ${{ runner.temp }}/budgetlite-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Aplicar Terraform con la imagen verificada
+        shell: bash
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/budgetlite-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          state_path="$HOME/mundose/terraform/terraform.tfstate"
+          test -f "$state_path" || {
+            echo "::error::No se encontró el estado del despliegue inicial en $state_path"
+            exit 1
+          }
+
+          docker load --input "$ARTIFACT_DIR/budgetlite-linux-arm64.tar.gz"
+          image_id=$(docker image inspect --format '{{.Id}}' budgetlite:ci)
+          export TF_VAR_budgetlite_image_id="$image_id"
+
+          plan_path=$(mktemp "$RUNNER_TEMP/budgetlite-plan.XXXXXX")
+          trap 'rm -f "$plan_path"' EXIT
+          terraform -chdir=terraform init -reconfigure -backend-config="path=$state_path"
+          terraform -chdir=terraform plan -lock-timeout=60s -out="$plan_path"
+          terraform -chdir=terraform apply -lock-timeout=60s "$plan_path"
+
+      - name: Verificar BudgetLite en Lima
+        run: curl --fail --silent --show-error --max-time 5 http://127.0.0.1:13000/readyz

@@ -1,0 +1,23 @@
+{
+  "name": "budgetlite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gestor local de gastos personales en pesos argentinos",
+  "type": "commonjs",
+  "engines": {
+    "node": "^22.13.0 || ^24.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "express": "^4.22.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "eslint": "^10.0.0"
+  }
+}

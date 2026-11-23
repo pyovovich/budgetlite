@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7fb">
+  <meta name="description" content="BudgetLite, un panel simple para gestionar tus gastos personales.">
+  <title>BudgetLite · Panel de gastos</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M20 8V5a2 2 0 0 0-2-2H6a3 3 0 0 0 0 6h15v10a2 2 0 0 1-2 2H6a3 3 0 0 1-3-3V6m18 7h-5a2 2 0 0 0 0 4h5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path d="m7 17 10-10M7 7h10v10"/></symbol>
+    <symbol id="i-trend" viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8m-6 0h6v6"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-9V3Zm4 0v5h5a7 7 0 0 0-5-5Z"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="m14 5 5 5m-14 9 5-1L21 7l-5-5L5 13l-1 6Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  </svg>
+
+  <aside class="sidebar">
+    <a class="brand" href="#panel">
+      <img src="/icon.svg" alt="" width="40" height="40">
+      <span>BudgetLite<small>Finanzas personales</small></span>
+    </a>
+    <nav aria-label="Navegación principal">
+      <a href="#panel"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg>Panel</a>
+      <a href="#gastos"><svg class="icon" aria-hidden="true"><use href="#i-list"/></svg>Gastos</a>
+      <a href="#presupuesto"><svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg>Presupuesto</a>
+    </nav>
+    <div class="local-note"><span class="local-dot"></span><span>Modo demostración<small>Datos en memoria</small></span></div>
+  </aside>
+
+  <main id="panel">
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">FINANZAS PERSONALES</p>
+        <h1>Panel de gastos</h1>
+        <p class="muted">Revisá tus gastos y el saldo de tu presupuesto mensual.</p>
+      </div>
+      <div class="page-actions">
+        <label class="month-label">Mes del panel <input type="month" id="month" required min="0001-01" max="9999-12"></label>
+        <button class="button primary" id="new-expense" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Nuevo gasto</button>
+      </div>
+    </header>
+
+    <p class="message" id="status" role="status"></p>
+    <div id="dashboard" aria-busy="true">
+      <section class="metrics" aria-label="Resumen mensual">
+        <article class="card metric"><span class="tile violet"><svg class="icon" aria-hidden="true"><use href="#i-out"/></svg></span><h2>Total gastado</h2><strong id="total">—</strong></article>
+        <article class="card metric"><span class="tile blue"><svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg></span><h2>Presupuesto</h2><strong id="budget">—</strong></article>
+        <article class="card metric"><span class="tile green"><svg class="icon" aria-hidden="true"><use href="#i-trend"/></svg></span><h2>Saldo disponible</h2><strong id="balance">—</strong></article>
+        <article class="card metric"><span class="tile amber"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg></span><h2>Presupuesto usado</h2><strong id="percent">—</strong></article>
+        <article class="card metric"><span class="tile rose"><svg class="icon" aria-hidden="true"><use href="#i-list"/></svg></span><h2>Cantidad de gastos</h2><strong id="count">—</strong></article>
+      </section>
+
+      <section class="card budget-panel" id="presupuesto" aria-labelledby="budget-title">
+        <div class="section-heading">
+          <div><h2 id="budget-title">Presupuesto mensual</h2><p class="muted" id="budget-caption">Consumo del mes seleccionado</p></div>
+          <button class="button secondary" id="edit-budget" type="button" disabled><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>Editar presupuesto</button>
+        </div>
+        <progress id="budget-progress" aria-label="Porcentaje del presupuesto usado" max="100" value="0"></progress>
+        <p class="warning" id="budget-warning" hidden>Superaste el 80% del presupuesto mensual.</p>
+      </section>
+
+      <div class="charts">
+        <section class="card chart" aria-labelledby="category-title">
+          <h2 id="category-title">Gastos por categoría</h2>
+          <p class="muted">Distribución de los gastos del mes</p>
+          <ul id="categories" class="category-chart"></ul>
+        </section>
+        <section class="card chart" aria-labelledby="daily-title">
+          <h2 id="daily-title">Evolución diaria</h2>
+          <p class="muted">Importe registrado por día en ARS</p>
+          <div id="daily" class="daily-chart"></div>
+        </section>
+      </div>
+
+      <section class="card expenses" id="gastos" aria-labelledby="expenses-title">
+        <div class="section-heading">
+          <div><h2 id="expenses-title">Gastos del mes</h2><p class="muted" id="results">Movimientos del período seleccionado</p></div>
+          <label class="category-label">Categoría <select id="filter"><option value="">Todas las categorías</option></select></label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Descripción</th><th scope="col">Categoría</th><th scope="col">Fecha</th><th scope="col">Importe</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
+            <tbody id="expenses-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <footer>BudgetLite <span>·</span> Importes en pesos argentinos (ARS)</footer>
+  </main>
+
+  <dialog id="expense-dialog" aria-labelledby="expense-dialog-title">
+    <form id="expense-form">
+      <div class="section-heading">
+        <div><h2 id="expense-dialog-title">Nuevo gasto</h2><p class="muted">Registrá un movimiento en pesos argentinos.</p></div>
+        <button class="icon-button close-dialog" type="button" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <label>Descripción <input name="description" required maxlength="120" placeholder="Ej. Supermercado" autofocus></label>
+      <div class="form-row">
+        <label>Importe (ARS) <input name="amount" type="number" required min="0.01" max="1000000000000" step="0.01" placeholder="0,00"></label>
+        <label>Fecha <input name="date" type="date" required min="0001-01-01" max="9999-12-31"></label>
+      </div>
+      <label>Categoría <select name="category" required><option value="">Elegí una categoría</option></select></label>
+      <p class="form-error" role="alert"></p>
+      <div class="dialog-actions"><button class="button secondary close-dialog" type="button">Cancelar</button><button class="button primary" type="submit">Guardar gasto</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="budget-dialog" aria-labelledby="budget-dialog-title">
+    <form id="budget-form">
+      <div class="section-heading">
+        <div><h2 id="budget-dialog-title">Editar presupuesto</h2><p class="muted" id="budget-period"></p></div>
+        <button class="icon-button close-dialog" type="button" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <label>Presupuesto mensual (ARS) <input name="amount" type="number" required min="0.01" max="1000000000000" step="0.01" autofocus></label>
+      <p class="form-error" role="alert"></p>
+      <div class="dialog-actions"><button class="button secondary close-dialog" type="button">Cancelar</button><button class="button primary" type="submit">Guardar presupuesto</button></div>
+    </form>
+  </dialog>
+
+  <template id="delete-icon"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></template>
+</body>
+</html>

@@ -32,6 +32,22 @@ jobs:
       - name: Ejecutar tests
         run: npm test
 
+      - name: Descargar Snyk CLI para ARM64
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location \
+            --output "$RUNNER_TEMP/snyk" \
+            https://github.com/snyk/cli/releases/download/v1.1308.4/snyk-linux-arm64
+          echo "9cf3e55e4bd216138a86a08f6d4235d5a014459cf0df7150818421fd8e044d48  $RUNNER_TEMP/snyk" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/snyk"
+
+      - name: Analizar dependencias npm con Snyk
+        if: github.event_name == 'push'
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: '"$RUNNER_TEMP/snyk" test --package-manager=npm --file=package.json'
+
       - name: Construir imagen Docker
         run: docker build --platform linux/arm64 --tag budgetlite:ci .
 
